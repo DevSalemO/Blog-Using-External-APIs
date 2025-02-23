@@ -91,7 +91,7 @@ blogForm.addEventListener('submit', (e) => {
     const title = titleInput.value.trim();
     const body = bodyInput.value.trim();
     
-    // Enhanced validation with more specific error messages
+ 
     if (!title || !body) {
         showFormError('Please fill in both title and content fields');
         return false;
@@ -124,7 +124,7 @@ blogForm.addEventListener('submit', (e) => {
     clearFormError();
 });
 
-// Enhanced error handling functions
+
 function showFormError(message) {
     let errorDiv = document.getElementById('form-error');
     if (!errorDiv) {
