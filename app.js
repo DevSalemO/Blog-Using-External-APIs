@@ -8,8 +8,8 @@ async function fetchNews(query = '') {
         postsContainer.innerHTML = ''; 
         
         const url = query
-            ? "https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&pageSize=12&apiKey=1bf5408b5bf44e88addcd01fd079cc9b"
-            : "https://newsapi.org/v2/top-headlines?country=us&pageSize=12&apiKey=1bf5408b5bf44e88addcd01fd079cc9b";
+            ? `https://newsapi.org/v2/everything?q=${query}&sortBy=publishedAt&pageSize=12&apiKey=1bf5408b5bf44e88addcd01fd079cc9b`
+            : `https://newsapi.org/v2/top-headlines?country=us&pageSize=12&apiKey=1bf5408b5bf44e88addcd01fd079cc9b`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -21,7 +21,28 @@ async function fetchNews(query = '') {
         loadingElement.style.display = 'none';
         displayPosts(data.articles);
     } catch (error) {
-        loadingElement.textContent = `Error: ${error.message}. Please try again later.`;
+        loadingElement.style.display = 'block';
+        if (error.message.includes('Requests from the browser are not allowed')) {
+            loadingElement.innerHTML = `
+                <div class="error-message">
+                    <p><strong>API Error:</strong> ${error.message}</p>
+                    <p>To resolve this issue:</p>
+                    <ol>
+                        <li>Ensure you're running the app on localhost (current setup is correct)</li>
+                        <li>Check if your API key is valid</li>
+                        <li>Consider upgrading to a paid plan for production deployment</li>
+                    </ol>
+                    <p>For development, the app will continue to work with custom posts.</p>
+                </div>
+            `;
+        } else {
+            loadingElement.innerHTML = `
+                <div class="error-message">
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p>Please try again later or contact support if the issue persists.</p>
+                </div>
+            `;
+        }
         console.error('Error:', error);
     }
 }
@@ -62,13 +83,32 @@ function createPostElement(article) {
     return postDiv;
 }
 
-
 blogForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
-    const title = document.getElementById('title').value;
-    const body = document.getElementById('body').value;
+    const titleInput = document.getElementById('title');
+    const bodyInput = document.getElementById('body');
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
     
+    // Enhanced validation with more specific error messages
+    if (!title || !body) {
+        showFormError('Please fill in both title and content fields');
+        return false;
+    }
+
+    if (title.length < 3) {
+        showFormError('Title is too short. Please enter at least 3 characters.');
+        titleInput.focus();
+        return false;
+    }
+
+    if (body.length < 10) {
+        showFormError('Content is too short. Please enter at least 10 characters.');
+        bodyInput.focus();
+        return false;
+    }
+
     const newPost = {
         title,
         description: body,
@@ -78,10 +118,30 @@ blogForm.addEventListener('submit', (e) => {
         urlToImage: null
     };
     
-
     const postElement = createPostElement(newPost);
     postsContainer.insertBefore(postElement, postsContainer.firstChild);
     blogForm.reset();
+    clearFormError();
 });
+
+// Enhanced error handling functions
+function showFormError(message) {
+    let errorDiv = document.getElementById('form-error');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'form-error';
+        errorDiv.classList.add('error-message');
+        blogForm.insertBefore(errorDiv, blogForm.firstChild);
+    }
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function clearFormError() {
+    const errorDiv = document.getElementById('form-error');
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
+    }
+}
 
 fetchNews();
